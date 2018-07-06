@@ -17,6 +17,10 @@
 - name: Copy default spinnaker config if one does not exist
   command: creates="/opt/spinnaker/config/spinnaker-local.yml" cp /opt/spinnaker/config/default-spinnaker-local.yml /opt/spinnaker/config/spinnaker-local.yml
 
+- name: debug spinnaker env var
+  debug:
+    var: spinnaker_environment
+
 - name: Configure spinnaker
   template: src=spinnaker-local.yml dest=/opt/spinnaker/config/spinnaker-local.yml
   notify: restart spinnaker

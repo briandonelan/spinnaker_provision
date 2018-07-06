@@ -1,25 +1,16 @@
 - hosts: halyard
-  roles:
-    - AMeng.spinnaker-ansible
-  vars:
-    ec2_instances: "i-04d81ddcd1df6305a,i-03bab9d0a92d8a928,i-0e6a5e0067f60d7ed"
-    spinnaker_cassandra_version: "3.9.0"
-    spinnaker_environment:
-      spinnaker_aws_enabled: "true"
-      spinnaker_aws_default_region: us-east-2
-      aws_vpc_id: vpc-0f23a267
-      aws_subnet_id: subnet-3a609f40
-    spinnaker_config:
-      providers:
-        aws:
-          enabled: true
-          defaultRegion: us-east-2
-          defaultIAMRole: spinnaker
-      services:
-        deck:
-          timezone: America/New_York
-        auth:
-          enabled: false
+  tasks:
+  - name: download halyard
+    get_url:
+      url: https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
+      dest: /tmp/InstallHalyard.sh
+      mode: 0770
+  - name: install halyard
+    command: "/bin/bash /tmp/InstallHalyard.sh --user ubuntu"
+  - name: check halyard installed successfully
+    command: "hal -v"
+    ignore_failed: true
+    register: halyard_result
 - hosts: jenkins
   roles:
     - geerlingguy.jenkins

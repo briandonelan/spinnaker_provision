@@ -34,10 +34,22 @@
   tags:
     - artifactory
 
-- name: apt install prerequesites
+- name: apt install prerequesites (openssl)
   apt: name=openssl state=present update_cache=yes
   tags:
     - artifactory
+  when: ansible_os_family == 'Debian'
+
+- name: apt install prerequesites (zip)
+  apt: name=zip state=present update_cache=yes
+  tags:
+  - artifactory
+  when: ansible_os_family == 'Debian'
+
+- name: apt install prereqs (psycopg2)
+  apt: name=python3-psycopg2 state=present update_cache=yes
+  tags:
+  - artifactory
   when: ansible_os_family == 'Debian'
 
 - name: set permissions on /opt

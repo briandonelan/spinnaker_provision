@@ -1,5 +1,10 @@
 ---
 
+- name: 'create user to run postgres'
+  user: name=postgres home=/opt/postgres/ shell=/bin/bash system=true
+  tags:
+  - artifactory
+
 - name: 'make sure postgres dependencies are installed'
   package:
     name: python-psycopg2
