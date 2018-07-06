@@ -1,10 +1,9 @@
-- hosts: servers
+- hosts: halyard
   roles:
-    - AMeng.spinnaker
+    - AMeng.spinnaker-ansible
   vars:
     ec2_instances: "i-04d81ddcd1df6305a,i-03bab9d0a92d8a928,i-0e6a5e0067f60d7ed"
-    #spinnaker_backup: True
-    #spinnaker_backup_bucket: "MyBucket/MyFolder/"
+    spinnaker_cassandra_version: "3.9.0"
     spinnaker_environment:
       spinnaker_aws_enabled: "true"
       spinnaker_aws_default_region: us-east-2
@@ -21,9 +20,20 @@
           timezone: America/New_York
         auth:
           enabled: false
-    spinnaker_config_clouddriver:
-      aws:
-        accounts:
-          - name: ccb_sandbox
-            accountId: 130291900959
-            discovery: http://eureka.production.example.com
+- hosts: jenkins
+  roles:
+    - geerlingguy.jenkins
+  vars:
+    jenkins_http_port: 8081
+    jenkins_admin_username: "brian"
+    jenkins_admin_password: "9bGARecZ"
+- hosts: artifactory
+  roles:
+    - geerlingguy.gitlab
+    - bbaassssiiee.artifactory
+  vars:
+    gitlab_nginx_listen_port: 8081
+    gitlab_nginx_listen_https: "false"
+    gitlab_password_comment_only: 5iveL!fe
+    gitlab_user_comment_only: root
+    artifactory_password: "9bGARecZ"
