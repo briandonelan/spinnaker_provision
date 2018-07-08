@@ -22,7 +22,8 @@
 - include_tasks: setup-RedHat.yml
   when: ansible_os_family == 'RedHat'
 
-- include_tasks: setup-Debian.yml
+- name: setup JDK
+  apt: "name=openjdk-8-jdk state=latest update_cache=yes"
   when: ansible_os_family == 'Debian'
 
 - include_tasks: setup-FreeBSD.yml

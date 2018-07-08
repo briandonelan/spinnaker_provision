@@ -8,10 +8,20 @@
 - name: 'make sure postgres dependencies are installed'
   package:
     name: python-psycopg2
-    state: installed
+    state: present
   when: ansible_os_family == 'RedHat' or ansible_os_family == 'Debian'
   tags:
     - artifactory
+
+- name: Install a list of packages
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+  when: ansible_os_family == 'Debian'
 
 - name: 'create artifactory database user in postgres'
   become: yes

@@ -28,3 +28,5 @@
     gitlab_password_comment_only: 5iveL!fe
     gitlab_user_comment_only: root
     artifactory_password: "9bGARecZ"
+    #artifactory_database: "mysql"
+    #mysql_root_password: "9bGARecZ"
