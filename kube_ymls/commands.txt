@@ -1,0 +1,10 @@
+from spinnaker top level directory:
+
+kubectl apply -f kube_ymls/sa.yml
+kubectl apply -f kube_ymls/role-binding.yml
+
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')
+
+kubectl -n kube-system get secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}') -o jsonpath="{['data']['ca\.crt']}" | base64 -D
+kubectl -n kube-system get secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}') -o jsonpath="{['data']['token']}" | base64 -D
+

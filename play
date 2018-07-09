@@ -1,5 +1,8 @@
 - hosts: halyard
   tasks:
+  - name: get ca
+    include_vars:
+      dir: secrets
   - name: download halyard
     get_url:
       url: https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
@@ -9,8 +12,74 @@
     command: "/bin/bash /tmp/InstallHalyard.sh --user ubuntu"
   - name: check halyard installed successfully
     command: "hal -v"
-    ignore_failed: true
     register: halyard_result
+  - name: debug halyard check
+    debug:
+      var: halyard_result
+  - name: create eks directory
+    file:
+      path: /opt/eks
+      state: directory
+      mode: 0770
+  - name: add heptio, kubectl to path
+    copy:
+      dest: /etc/profile.d/eks-path.sh
+      content: 'PATH=$PATH:/opt/eks'
+  - name: download kubectl
+    get_url:
+      url: https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/kubectl
+      dest: /opt/eks/kubectl
+      mode: 0770
+  - name: download heptio
+    get_url:
+      url: https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws
+      dest: /opt/eks/heptio-authenticator-aws
+      mode: 0770
+  - name: .kube directory exists in root home
+    file:
+      path: /root/.kube
+      state: directory
+      mode: 0755
+  - name: configure ~/.kube/config
+    template:
+      src: kube_ymls/kubeconfig.j2
+      dest: /root/.kube/config
+      mode: 0644
+  - name: run "hal config provider kubernetes enable"
+    command: hal config provider kubernetes enable
+    ignore_errors: yes
+  - name: run "hal config provider kubernetes account add eks-admin --provider-version v2 --context aws_ekstestvalidations"
+    command: "hal config provider kubernetes account add eks-admin --provider-version v2 --context aws_ekstestvalidations"
+    ignore_errors: yes
+  - name: run "hal config features edit --artifacts true"
+    command: "hal config features edit --artifacts true"
+    ignore_errors: yes
+  - name: run "hal config deploy edit --type localdebian"
+    command: "hal config deploy edit --type localdebian"
+    ignore_errors: yes
+  - name: run "hal config version edit --version 1.8.0"
+    command: "hal config version edit --version 1.8.0"
+    ignore_errors: yes
+  - name: gate yml exists
+    file:
+      path: /root/.hal/default/service-settings/gate.yml
+      mode: 0755
+  - name: deck yml exists
+    file:
+      path: /root/.hal/default/service-settings/deck.yml
+      mode: 0755
+  - name: lineinfile- gate- listen on 0.0.0.0
+    lineinfile:
+      path: /root/.hal/default/service-settings/gate.yml
+      regexp: '^host'
+      line: "host: 0.0.0.0"
+  - name: lineinfile- deck- listen on 0.0.0.0
+    lineinfile:
+      path: /root/.hal/default/service-settings/deck.yml
+      regexp: '^host'
+      line: "host: 0.0.0.0"
+  - name: run "hal deploy apply"
+    command: "hal deploy apply"
 - hosts: jenkins
   roles:
     - geerlingguy.jenkins
