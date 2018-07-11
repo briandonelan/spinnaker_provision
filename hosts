@@ -4,13 +4,13 @@ jenkins
 artifactory
 
 [halyard]
-ec2-18-222-129-20.us-east-2.compute.amazonaws.com
+ec2-13-58-208-166.us-east-2.compute.amazonaws.com
 
 [jenkins]
-ec2-18-217-144-36.us-east-2.compute.amazonaws.com
+ec2-18-222-123-92.us-east-2.compute.amazonaws.com
 
 [artifactory]
-ec2-18-221-80-177.us-east-2.compute.amazonaws.com
+ec2-18-222-88-128.us-east-2.compute.amazonaws.com
 
 [aws:vars]
 ansible_ssh_user=ubuntu

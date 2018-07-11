@@ -5,6 +5,11 @@
   - name: get ca
     include_vars:
       dir: secrets
+  - name: install expect utility
+    apt:
+      name: expect
+      state: latest
+      update_cache: yes
   - name: download halyard
     get_url:
       url: https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
@@ -51,18 +56,6 @@
       src: kube_ymls/kubeconfig.j2
       dest: /home/ubuntu/.kube/config
       mode: 0644
-  - name: .kube directory exists in root home
-    file:
-      path: /home/ubuntu/.kube
-      state: directory
-      mode: 0755
-    become: yes
-    become_user: ubuntu
-  - name: configure /root/.kube/config
-    template:
-      src: kube_ymls/kubeconfig.j2
-      dest: /root/.kube/config
-      mode: 0777
   - name: run "hal config provider kubernetes enable"
     command: hal config provider kubernetes enable
     ignore_errors: yes
@@ -83,8 +76,8 @@
     ignore_errors: yes
     become: yes
     become_user: ubuntu
-  - name: run "hal config version edit --version 1.7.5"
-    command: "hal config version edit --version 1.7.5"
+  - name: run "hal config version edit --version 1.7.6"
+    command: "hal config version edit --version 1.7.6"
     ignore_errors: yes
     become: yes
     become_user: ubuntu
@@ -113,10 +106,31 @@
       path: /home/ubuntu/.hal/default/service-settings/deck.yml
       regexp: '^host'
       line: "host: 0.0.0.0"
+  - name: template out persistent storage settings
+    template:
+      src: kube_ymls/persistent_storage.sh
+      dest: /home/ubuntu/persistent_storage.sh
+      mode: 0777
+  - name: template out spawn expect command
+    template:
+      src: kube_ymls/spawn_expect.sh
+      dest: /home/ubuntu/spawn_expect.sh
+      mode: 0777
   - name: set persistent storage
-    command: "hal config storage s3 edit --access-key-id {{ S3_SECRET_ID_KEY }} --secret-access-key --region {{ S3_REGION }}"
+    shell: "/home/ubuntu/spawn_expect.sh"
+    become: yes
+    become_user: ubuntu
+  - name: set s3 as the storage provider
+    command: "hal config storage edit --type s3"
   - name: run "hal deploy apply"
     shell: "hal deploy apply"
+    become: yes
+    become_user: ubuntu
+    ignore_errors: yes
+  - name: run install script as root
+    shell: "/bin/bash /home/ubuntu/.hal/default/install.sh"
+  - name: hal deploy connect
+    shell: "hal deploy connect"
     become: yes
     become_user: ubuntu
 - hosts: jenkins
