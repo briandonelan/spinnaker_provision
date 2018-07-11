@@ -1,4 +1,6 @@
 - hosts: halyard
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
   tasks:
   - name: get ca
     include_vars:
@@ -7,12 +9,14 @@
     get_url:
       url: https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
       dest: /tmp/InstallHalyard.sh
-      mode: 0770
+      mode: 0777
   - name: install halyard
-    command: "/bin/bash /tmp/InstallHalyard.sh --user ubuntu"
+    shell: "/bin/bash /tmp/InstallHalyard.sh --user ubuntu"
   - name: check halyard installed successfully
     command: "hal -v"
     register: halyard_result
+    become: yes
+    become_user: ubuntu
   - name: debug halyard check
     debug:
       var: halyard_result
@@ -35,51 +39,86 @@
       url: https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws
       dest: /opt/eks/heptio-authenticator-aws
       mode: 0770
-  - name: .kube directory exists in root home
+  - name: .kube directory exists in ubuntu home
     file:
-      path: /root/.kube
+      path: /home/ubuntu/.kube
       state: directory
       mode: 0755
-  - name: configure ~/.kube/config
+    become: yes
+    become_user: ubuntu
+  - name: configure /home/ubuntu/.kube/config
+    template:
+      src: kube_ymls/kubeconfig.j2
+      dest: /home/ubuntu/.kube/config
+      mode: 0644
+  - name: .kube directory exists in root home
+    file:
+      path: /home/ubuntu/.kube
+      state: directory
+      mode: 0755
+    become: yes
+    become_user: ubuntu
+  - name: configure /root/.kube/config
     template:
       src: kube_ymls/kubeconfig.j2
       dest: /root/.kube/config
-      mode: 0644
+      mode: 0777
   - name: run "hal config provider kubernetes enable"
     command: hal config provider kubernetes enable
     ignore_errors: yes
+    become: yes
+    become_user: ubuntu
   - name: run "hal config provider kubernetes account add eks-admin --provider-version v2 --context aws_ekstestvalidations"
     command: "hal config provider kubernetes account add eks-admin --provider-version v2 --context aws_ekstestvalidations"
     ignore_errors: yes
+    become: yes
+    become_user: ubuntu
   - name: run "hal config features edit --artifacts true"
     command: "hal config features edit --artifacts true"
     ignore_errors: yes
+    become: yes
+    become_user: ubuntu
   - name: run "hal config deploy edit --type localdebian"
     command: "hal config deploy edit --type localdebian"
     ignore_errors: yes
-  - name: run "hal config version edit --version 1.8.0"
-    command: "hal config version edit --version 1.8.0"
+    become: yes
+    become_user: ubuntu
+  - name: run "hal config version edit --version 1.7.5"
+    command: "hal config version edit --version 1.7.5"
     ignore_errors: yes
+    become: yes
+    become_user: ubuntu
+  - name: hal defaults service-settings dir exists
+    file:
+      path: /home/ubuntu/.hal/default/service-settings
+      mode: 0775
+      state: directory
   - name: gate yml exists
     file:
-      path: /root/.hal/default/service-settings/gate.yml
+      path: /home/ubuntu/.hal/default/service-settings/gate.yml
       mode: 0755
+      state: touch
   - name: deck yml exists
     file:
-      path: /root/.hal/default/service-settings/deck.yml
+      path: /home/ubuntu/.hal/default/service-settings/deck.yml
       mode: 0755
+      state: touch
   - name: lineinfile- gate- listen on 0.0.0.0
     lineinfile:
-      path: /root/.hal/default/service-settings/gate.yml
+      path: /home/ubuntu/.hal/default/service-settings/gate.yml
       regexp: '^host'
       line: "host: 0.0.0.0"
   - name: lineinfile- deck- listen on 0.0.0.0
     lineinfile:
-      path: /root/.hal/default/service-settings/deck.yml
+      path: /home/ubuntu/.hal/default/service-settings/deck.yml
       regexp: '^host'
       line: "host: 0.0.0.0"
+  - name: set persistent storage
+    command: "hal config storage s3 edit --access-key-id {{ S3_SECRET_ID_KEY }} --secret-access-key --region {{ S3_REGION }}"
   - name: run "hal deploy apply"
-    command: "hal deploy apply"
+    shell: "hal deploy apply"
+    become: yes
+    become_user: ubuntu
 - hosts: jenkins
   roles:
     - geerlingguy.jenkins
